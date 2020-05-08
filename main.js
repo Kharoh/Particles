@@ -3,6 +3,7 @@ let particles = []
 
 const particleNumber = 50
 const frequency = 10
+const attractivity = 2 / 100
 const maxFrame = -1
 let frame = 0
 
@@ -48,8 +49,8 @@ class Particle {
     }, this.x)
     attractedX /= proximityParticles.length + 1
 
-    this.x += Math.cos(this.a) * this.s + (attractedX - this.x) * 0.05;
-    this.y += Math.sin(this.a) * this.s + (attractedY - this.y) * 0.05;
+    this.x += Math.cos(this.a) * this.s + (attractedX - this.x) * attractivity;
+    this.y += Math.sin(this.a) * this.s + (attractedY - this.y) * attractivity;
     this.a += Math.random() * 0.8 - 0.4;
 
     if ((this.x < 0 || this.x > this.w - this.radius) || (this.y < 0 || this.y > this.h - this.radius))
