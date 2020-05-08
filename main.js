@@ -1,10 +1,10 @@
 const [canvas, ctx] = createCanvas()
 let particles = []
 
-const particleNumber = 200
+const particleNumber = 50
 const frequency = 10
+const maxFrame = -1
 let frame = 0
-const maxFrame = 50
 
 class Particle {
   constructor(canvas) {
@@ -110,7 +110,7 @@ function update() {
 
   /* Set the next update */
   frame++
-  if (frame < maxFrame) requestAnimationFrame(update)
+  if (maxFrame === -1 || frame < maxFrame) requestAnimationFrame(update)
 }
 
 createNewParticles(particleNumber)
