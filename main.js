@@ -62,9 +62,9 @@ class Particle {
             accY += particle.y * particle.attractiveness
           ]
           : [accX, accY]
-      }, [this.x, this.y])
+      }, [this.x + width / 2 * particleNumber / 6, this.y + height / 2 * particleNumber / 6])
       .map((attracted, index) => {
-        attracted /= totalAttractiveness + 1
+        attracted /= totalAttractiveness + 1 + particleNumber / 6
         if (index === 0) return attracted - this.x
         if (index === 1) return attracted - this.y
       })

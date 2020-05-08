@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,200;0,400;0,500;0,700;0,800;0,900;1,200;1,400;1,500;1,700;1,900&display=swap');
+
 html,
 body {
   margin: 0;
@@ -5,7 +7,32 @@ body {
   overflow: hidden;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  color: white;
+  text-align: center;
+}
+
 body {
   width: 100vw;
   height: 100vh;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.title-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 50px rgba(0, 0, 0, .5));
+}
+
+h1 {
+  font-weight: 800;
+  font-size: 5vw;
+}
+
+h2 {
+  font-weight: 500;
+  font-size: 2vw;
 }
