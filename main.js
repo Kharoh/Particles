@@ -1,9 +1,18 @@
+const width = document.querySelector('body').clientWidth
+const height = document.querySelector('body').clientHeight
+
 const [canvas, ctx] = createCanvas()
 let particles = []
+let currentParticleAmount = 0
+const particleNumber = 400
 
-const particleNumber = 50
+const globalSpeed = 0.4
+
 const frequency = 10
-const attractivity = 2 / 100
+let attractivity = 6 / 100 * globalSpeed
+const temperature = 20 * globalSpeed
+const directionModifier = 4 / globalSpeed
+
 const maxFrame = -1
 let frame = 0
 
@@ -12,20 +21,20 @@ class Particle {
     const random = Math.random()
     this.canvas = canvas;
 
-    this.x = window.innerWidth / 2 + (Math.random() * window.innerWidth / 8 - Math.random() * window.innerWidth / 8)
-    this.y = window.innerHeight / 2 + (Math.random() * window.innerHeight / 4 - Math.random() * window.innerHeight / 4)
+    this.x = width / 2 + (Math.random() * width / 8 - Math.random() * width / 8)
+    this.y = height / 2 + (Math.random() * height / 4 - Math.random() * height / 4)
 
-    this.s = 0.8 + Math.random() * 0.6;
-    this.a = Math.random() * 6
+    this.speed = (0.8 + Math.random() * 0.6) * temperature;
+    this.direction = Math.random() * Math.PI * 2
+    this.attractiveness = Math.random() * 1 // how much the particule attracts other particules, negative means it repulses
+    this.attractedness = Math.random() * 2 // how much the particule is attracted to other particules
 
-    this.w = window.innerWidth
-    this.h = window.innerHeight
     this.radius = random * 5
     this.color = ["#f3abfd", "#8bc3f7", "#f8ed93", "#abfdb9"][Math.floor(Math.random() * 4)]
   }
 
   filterProximityParticles() {
-    return particles.filter(particle => Math.abs(particle.x - this.x) && Math.abs(particle.x - this.x) < 250 && Math.abs(particle.y - this.y) && Math.abs(particle.y - this.y) < 250)
+    return particles.filter(particle => Math.abs(particle.x - this.x) && Math.abs(particle.x - this.x) < 1000 && Math.abs(particle.y - this.y) && Math.abs(particle.y - this.y) < 1000)
   }
 
   render() {
@@ -39,31 +48,68 @@ class Particle {
 
   move() {
     const proximityParticles = this.filterProximityParticles()
-    let attractedY = proximityParticles.reduce((acc, particle) => {
-      return acc += particle.y
-    }, this.y)
-    attractedY /= proximityParticles.length + 1
+    const totalAttractiveness = proximityParticles.reduce((acc, particle) => particle.attractiveness > 0 ? acc += particle.attractiveness : acc, 0)
+    const totalRepulsiveness = proximityParticles.reduce((acc, particle) => particle.attractiveness < 0 ? acc += particle.attractiveness : acc, 0)
 
-    let attractedX = proximityParticles.reduce((acc, particle) => {
-      return acc += particle.x
-    }, this.x)
-    attractedX /= proximityParticles.length + 1
+    const effectiveAttractivity = attractivity > 0 ? attractivity : 0
 
-    this.x += Math.cos(this.a) * this.s + (attractedX - this.x) * attractivity;
-    this.y += Math.sin(this.a) * this.s + (attractedY - this.y) * attractivity;
-    this.a += Math.random() * 0.8 - 0.4;
+    /* Create a pondered mean between all the neighbour particles positions and their attractiveness */
+    const [attractedX, attractedY] = proximityParticles
+      .reduce(([accX, accY], particle) => {
+        return particle.attractiveness > 0 ?
+          [
+            accX += particle.x * particle.attractiveness,
+            accY += particle.y * particle.attractiveness
+          ]
+          : [accX, accY]
+      }, [this.x, this.y])
+      .map((attracted, index) => {
+        attracted /= totalAttractiveness + 1
+        if (index === 0) return attracted - this.x
+        if (index === 1) return attracted - this.y
+      })
 
-    if ((this.x < 0 || this.x > this.w - this.radius) || (this.y < 0 || this.y > this.h - this.radius))
+    /* Do the same for the repulsed point but flip it around the particle */
+    const [repulsedX, repulsedY] = proximityParticles
+      .reduce(([accX, accY], particle) => {
+        return particle.attractiveness < 0 ?
+          [
+            accX += particle.x * particle.attractiveness,
+            accY += particle.y * particle.attractiveness
+          ]
+          : [accX, accY]
+      }, [this.x, this.y])
+      .map((repulsed, index) => {
+        repulsed /= totalRepulsiveness + 1
+        if (index === 0) return (repulsed - this.x) * -1
+        if (index === 1) return (repulsed - this.y) * -1
+      })
+
+    this.x += Math.cos(this.direction) * this.speed
+      + attractedX * effectiveAttractivity
+      + repulsedX * effectiveAttractivity
+    this.y += Math.sin(this.direction) * this.speed
+      + attractedY * effectiveAttractivity
+      + repulsedY * effectiveAttractivity
+
+    this.direction += Math.random() * Math.PI / directionModifier - Math.PI / (directionModifier * 2);
+
+    if ((this.x < 0 || this.x > width - this.radius) || (this.y < 0 || this.y > height - this.radius)) {
+      currentParticleAmount -= 1
       return false
+    }
 
     this.render()
     return true
   }
 }
 
-function createNewParticles(n) {
+function createNewParticles() {
+  const particlesToBeGenerated = particleNumber - currentParticleAmount
+
   /* Add the new particles */
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < particlesToBeGenerated; i++) {
+    currentParticleAmount++
     setTimeout(() => {
       particles.push(new Particle(ctx))
     }, frequency * i)
@@ -78,8 +124,8 @@ function createCanvas() {
   const canvas = document.createElement('canvas')
 
   /* Set the canvas width and height */
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
+  canvas.width = width
+  canvas.height = height
 
   /* Append the element to the body */
   document.querySelector('body').append(canvas)
@@ -107,7 +153,7 @@ function update() {
   particles = particles.filter(particle => particle.move())
 
   /* Recreate destroyed particles */
-  if (particles.length && particles.length < particleNumber) createNewParticles(particleNumber - particles.length)
+  createNewParticles()
 
   /* Set the next update */
   frame++
@@ -116,3 +162,7 @@ function update() {
 
 createNewParticles(particleNumber)
 update()
+
+window.addEventListener('wheel', event => {
+  attractivity += Math.sign(event.deltaY) / 100
+})
