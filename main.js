@@ -1,5 +1,7 @@
 const width = document.querySelector('body').clientWidth
 const height = document.querySelector('body').clientHeight
+let isAttachedToMouse = true
+let [posX, posY] = [width / 2, height / 2]
 
 const [canvas, ctx] = createCanvas()
 let particles = []
@@ -62,35 +64,17 @@ class Particle {
             accY += particle.y * particle.attractiveness
           ]
           : [accX, accY]
-      }, [this.x + width / 2 * particleNumber / 6, this.y + height / 2 * particleNumber / 6])
+      }, [this.x + posX * particleNumber / 6, this.y + posY * particleNumber / 6])
       .map((attracted, index) => {
         attracted /= totalAttractiveness + 1 + particleNumber / 6
         if (index === 0) return attracted - this.x
         if (index === 1) return attracted - this.y
       })
 
-    /* Do the same for the repulsed point but flip it around the particle */
-    const [repulsedX, repulsedY] = proximityParticles
-      .reduce(([accX, accY], particle) => {
-        return particle.attractiveness < 0 ?
-          [
-            accX += particle.x * particle.attractiveness,
-            accY += particle.y * particle.attractiveness
-          ]
-          : [accX, accY]
-      }, [this.x, this.y])
-      .map((repulsed, index) => {
-        repulsed /= totalRepulsiveness + 1
-        if (index === 0) return (repulsed - this.x) * -1
-        if (index === 1) return (repulsed - this.y) * -1
-      })
-
     this.x += Math.cos(this.direction) * this.speed
       + attractedX * effectiveAttractivity
-      + repulsedX * effectiveAttractivity
     this.y += Math.sin(this.direction) * this.speed
       + attractedY * effectiveAttractivity
-      + repulsedY * effectiveAttractivity
 
     this.direction += Math.random() * Math.PI / directionModifier - Math.PI / (directionModifier * 2);
 
@@ -165,4 +149,27 @@ update()
 
 window.addEventListener('wheel', event => {
   attractivity += Math.sign(event.deltaY) / 100
+})
+
+function mousemoveHandler(event) {
+  posX = event.pageX
+  posY = event.pageY
+}
+
+window.addEventListener('mousemove', mousemoveHandler)
+
+window.addEventListener('click', event => {
+  if (isAttachedToMouse) {
+    window.removeEventListener('mousemove', mousemoveHandler)
+    posX = width / 2
+    posY = height / 2
+    isAttachedToMouse = !isAttachedToMouse
+  }
+
+  else {
+    posX = event.pageX
+    posY = event.pageY
+    window.addEventListener('mousemove', mousemoveHandler)
+    isAttachedToMouse = !isAttachedToMouse
+  }
 })
