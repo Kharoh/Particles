@@ -6,14 +6,14 @@ let [posX, posY] = [width / 2, height / 2]
 const [canvas, ctx] = createCanvas()
 let particles = []
 let currentParticleAmount = 0
-const particleNumber = 400
+const particleNumber = 200
 
-const globalSpeed = 0.4
+const globalSpeed = 0.2
 
-const frequency = 10
-let attractivity = 6 / 100 * globalSpeed
+const frequency = 0 / globalSpeed
+let attractivity = 1000 / 100 * globalSpeed
 const temperature = 20 * globalSpeed
-const directionModifier = 4 / globalSpeed
+const directionModifier = 2 / globalSpeed
 
 const maxFrame = -1
 let frame = 0
@@ -25,6 +25,8 @@ class Particle {
 
     this.x = width / 2 + (Math.random() * width / 8 - Math.random() * width / 8)
     this.y = height / 2 + (Math.random() * height / 4 - Math.random() * height / 4)
+    this.prevX = this.x
+    this.prevY = this.y
 
     this.speed = (0.8 + Math.random() * 0.6) * temperature;
     this.direction = Math.random() * Math.PI * 2
@@ -36,7 +38,7 @@ class Particle {
   }
 
   filterProximityParticles() {
-    return particles.filter(particle => Math.abs(particle.x - this.x) && Math.abs(particle.x - this.x) < 1000 && Math.abs(particle.y - this.y) && Math.abs(particle.y - this.y) < 1000)
+    return particles.filter(particle => Math.abs(particle.x - this.x) && Math.abs(particle.x - this.x) < 2000 && Math.abs(particle.y - this.y) && Math.abs(particle.y - this.y) < 2000)
   }
 
   render() {
@@ -51,7 +53,6 @@ class Particle {
   move() {
     const proximityParticles = this.filterProximityParticles()
     const totalAttractiveness = proximityParticles.reduce((acc, particle) => particle.attractiveness > 0 ? acc += particle.attractiveness : acc, 0)
-    const totalRepulsiveness = proximityParticles.reduce((acc, particle) => particle.attractiveness < 0 ? acc += particle.attractiveness : acc, 0)
 
     const effectiveAttractivity = attractivity > 0 ? attractivity : 0
 
@@ -71,12 +72,22 @@ class Particle {
         if (index === 1) return attracted - this.y
       })
 
+    this.prevX = this.x
+    this.prevY = this.y
+
     this.x += Math.cos(this.direction) * this.speed
       + attractedX * effectiveAttractivity
     this.y += Math.sin(this.direction) * this.speed
       + attractedY * effectiveAttractivity
 
-    this.direction += Math.random() * Math.PI / directionModifier - Math.PI / (directionModifier * 2);
+    let quadrant = 0
+    if (this.prevY > this.y && this.prevX > this.x) quadrant += Math.PI
+    if (this.prevY < this.y && this.prevX > this.x) quadrant += Math.PI
+
+    this.direction =
+      quadrant + Math.atan((this.prevY - this.y) / (this.prevX - this.x))
+      + Math.random() * Math.PI / directionModifier - Math.PI / (directionModifier * 2)
+
 
     if ((this.x < 0 || this.x > width - this.radius) || (this.y < 0 || this.y > height - this.radius)) {
       currentParticleAmount -= 1
@@ -148,7 +159,7 @@ createNewParticles(particleNumber)
 update()
 
 window.addEventListener('wheel', event => {
-  attractivity += Math.sign(event.deltaY) / 100
+  attractivity += (Math.sign(event.deltaY) / 100) * globalSpeed
 })
 
 function mousemoveHandler(event) {
